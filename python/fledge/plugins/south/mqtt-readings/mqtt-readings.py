@@ -117,7 +117,7 @@ _DEFAULT_CONFIG = {
     'topic': {
         'description': 'The subscription topic to subscribe to receive messages',
         'type': 'string',
-        'default': '/measurement/+/value',
+        'default': 'measurement/+/value',
         'order': '6',
         'displayName': 'Topic To Subscribe',
         'mandatory': 'true'
@@ -134,7 +134,7 @@ _DEFAULT_CONFIG = {
     'assetName': {
         'description': 'Name of Asset / Regex to extract Asset Name from topic',
         'type': 'string',
-        'default': '/measurement/([^/]+)/value',
+        'default': r'measurement/([^/]+)/value',
         'order': '8',
         'displayName': 'Asset Name',
         'mandatory': 'true'
@@ -243,7 +243,7 @@ def plugin_register_ingest(handle, callback, ingest_ref):
 class MqttSubscriberClient(object):
     """ mqtt listener class"""
 
-    __slots__ = ['mqtt_client', 'broker_host', 'broker_port', 'username', 'password', 'topic', 'qos', 'keep_alive_interval', 'asset', 'loop']
+    __slots__ = ['mqtt_client', 'broker_host', 'broker_port', 'username', 'password', 'topic', 'qos', 'keep_alive_interval', 'asset', 'loop', 'topic_pattern']
 
     def __init__(self, config):
         self.mqtt_client = mqtt.Client()
@@ -258,6 +258,7 @@ class MqttSubscriberClient(object):
         self.topic_pattern = None
         try:
             self.topic_pattern = re.compile(self.asset)
+            _LOGGER.info("compiled pattern")
         except:
             _LOGGER.info("the passed asset name is not a regex pattern")
 
@@ -314,11 +315,13 @@ class MqttSubscriberClient(object):
         data = payload_json
 
         if 'readings' in data:
+            _LOGGER.info("data include readings")
             if self.topic_pattern:
                 # Use the regular expression to extract the value of the '+' placeholder
                 match = self.topic_pattern.match(msg.topic)
                 assetName = "Unknown"
                 if match:
+                    _LOGGER.info("using topic as asset name")
                     assetName = match.group(1)
                 if 'asset' not in data:
                     data['asset'] = assetName
@@ -328,6 +331,7 @@ class MqttSubscriberClient(object):
             if 'timestamp' not in data:
                 data['timestamp'] = utils.local_timestamp()
         else:
+            _LOGGER.info("data does not include readings")
             data = {
                 'asset': self.asset,
                 'timestamp': utils.local_timestamp(),

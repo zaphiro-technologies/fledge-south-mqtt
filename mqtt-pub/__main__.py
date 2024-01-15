@@ -37,14 +37,15 @@ def prepare_data():
     h = float("{0:.2f}".format(random.uniform(50, 100)))
     t = float("{0:.2f}".format(random.uniform(10, 40)))
     data = dict()
-    data['humidity'] = h
-    data['temp'] = t
+    data['readings'] = dict()
+    data['readings']['humidity'] = h
+    data['readings']['temp'] = t
     jdoc = json.dumps(data)
     return jdoc
 
 
 def publish_now(message):
-    topic = "Room1/conditions"
+    topic = "measurement/1/value"
     mqttc.publish(topic, message)
     print("Published: " + str(message) + " " + "on MQTT Topic: " + str(topic))
 
