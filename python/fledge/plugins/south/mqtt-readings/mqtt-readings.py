@@ -50,6 +50,7 @@ import logging
 import uuid
 
 import paho.mqtt.client as mqtt
+import re
 
 from fledge.common import logger
 from fledge.plugins.common import utils
@@ -116,7 +117,7 @@ _DEFAULT_CONFIG = {
     'topic': {
         'description': 'The subscription topic to subscribe to receive messages',
         'type': 'string',
-        'default': 'Room1/conditions',
+        'default': '/measurement/+/value',
         'order': '6',
         'displayName': 'Topic To Subscribe',
         'mandatory': 'true'
@@ -131,9 +132,9 @@ _DEFAULT_CONFIG = {
         'maximum': '2'
     },
     'assetName': {
-        'description': 'Name of Asset',
+        'description': 'Name of Asset / Regex to extract Asset Name from topic',
         'type': 'string',
-        'default': 'mqtt-',
+        'default': '/measurement/([^/]+)/value',
         'order': '8',
         'displayName': 'Asset Name',
         'mandatory': 'true'
@@ -144,7 +145,7 @@ _DEFAULT_CONFIG = {
 def plugin_info():
     return {
         'name': 'MQTT Subscriber',
-        'version': '2.3.0',
+        'version': '2.3.0-custom',
         'mode': 'async',
         'type': 'south',
         'interface': '1.0',
@@ -254,6 +255,11 @@ class MqttSubscriberClient(object):
         self.qos = int(config['qos']['value'])
         self.keep_alive_interval = int(config['keepAliveInterval']['value'])
         self.asset = config['assetName']['value']
+        self.topic_pattern = None
+        try:
+            self.topic_pattern = re.compile(self.asset)
+        except:
+            _LOGGER.info("the passed asset name is not a regex pattern")
 
     def on_connect(self, client, userdata, flags, rc):
         """ The callback for when the client receives a CONNACK response from the server
@@ -303,12 +309,28 @@ class MqttSubscriberClient(object):
 
     async def save(self, msg):
         """Store msg content to Fledge """
-        # TODO: string and other types?
         payload_json = json.loads(msg.payload.decode('utf-8'))
         _LOGGER.debug("Ingesting %s on topic %s", payload_json, str(msg.topic)) 
-        data = {
-            'asset': self.asset,
-            'timestamp': utils.local_timestamp(),
-            'readings': payload_json
-        }
+        data = payload_json
+
+        if 'readings' in data:
+            if self.topic_pattern:
+                # Use the regular expression to extract the value of the '+' placeholder
+                match = self.topic_pattern.match(msg.topic)
+                assetName = "Unknown"
+                if match:
+                    assetName = match.group(1)
+                if 'asset' not in data:
+                    data['asset'] = assetName
+            else:
+                if 'asset' not in data:
+                    data['asset'] = self.asset
+            if 'timestamp' not in data:
+                data['timestamp'] = utils.local_timestamp()
+        else:
+            data = {
+                'asset': self.asset,
+                'timestamp': utils.local_timestamp(),
+                'readings': payload_json
+            }
         async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
