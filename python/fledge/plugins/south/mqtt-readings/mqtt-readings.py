@@ -312,29 +312,30 @@ class MqttSubscriberClient(object):
         """Store msg content to Fledge """
         payload_json = json.loads(msg.payload.decode('utf-8'))
         _LOGGER.debug("Ingesting %s on topic %s", payload_json, str(msg.topic)) 
-        data = payload_json
+        data_array = payload_json
 
-        if 'readings' in data:
-            _LOGGER.info("data include readings")
-            if self.topic_pattern:
-                # Use the regular expression to extract the value of the '+' placeholder
-                match = self.topic_pattern.match(msg.topic)
-                assetName = "Unknown"
-                if match:
-                    _LOGGER.info("using topic as asset name")
-                    assetName = match.group(1)
-                if 'asset' not in data:
-                    data['asset'] = assetName
+        for data in data_array:
+            if 'readings' in data:
+                _LOGGER.info("data include readings")
+                if self.topic_pattern:
+                    # Use the regular expression to extract the value of the '+' placeholder
+                    match = self.topic_pattern.match(msg.topic)
+                    assetName = "Unknown"
+                    if match:
+                        _LOGGER.info("using topic as asset name")
+                        assetName = match.group(1)
+                    if 'asset' not in data:
+                        data['asset'] = assetName
+                else:
+                    if 'asset' not in data:
+                        data['asset'] = self.asset
+                if 'timestamp' not in data:
+                    data['timestamp'] = utils.local_timestamp()
             else:
-                if 'asset' not in data:
-                    data['asset'] = self.asset
-            if 'timestamp' not in data:
-                data['timestamp'] = utils.local_timestamp()
-        else:
-            _LOGGER.info("data does not include readings")
-            data = {
-                'asset': self.asset,
-                'timestamp': utils.local_timestamp(),
-                'readings': payload_json
-            }
-        async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
+                _LOGGER.info("data does not include readings")
+                data = {
+                    'asset': self.asset,
+                    'timestamp': utils.local_timestamp(),
+                    'readings': payload_json
+                }
+            async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
