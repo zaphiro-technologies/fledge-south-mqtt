@@ -320,7 +320,6 @@ class MqttSubscriberClient(object):
         self.mqtt_client.loop_stop()
 
     async def save(self, msg):
-        _LOGGER.error("SAVE FUN TRIGGERED")
         """Store msg content to Fledge """
         payload_json = json.loads(msg.payload.decode('utf-8'))
         _LOGGER.debug("Ingesting %s on topic %s", payload_json, str(msg.topic)) 
@@ -350,4 +349,5 @@ class MqttSubscriberClient(object):
                     'timestamp': utils.local_timestamp(),
                     'readings': payload_json
                 }
+            _LOGGER.debug(data)  
             async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
