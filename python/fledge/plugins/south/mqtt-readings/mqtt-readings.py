@@ -48,6 +48,8 @@ import copy
 import json
 import logging
 import uuid
+import logging
+from sys import stdout
 
 import paho.mqtt.client as mqtt
 import re
@@ -172,15 +174,12 @@ def plugin_start(handle):
     global loop
     loop = asyncio.new_event_loop()
 
-    # Create a stream handler that writes log messages to stdout
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO)
-    # Create a formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    # Set the formatter for the handler
-    stream_handler.setFormatter(formatter)
-    # Add the stream handler to the logger
-    _LOGGER.addHandler(stream_handler)
+    
+    logFormatter = logging.Formatter\
+    ("%(name)-12s %(asctime)s %(levelname)-8s %(filename)s:%(funcName)s %(message)s")
+    consoleHandler = logging.StreamHandler(stdout) #set streamhandler to stdout
+    consoleHandler.setFormatter(logFormatter)
+    logger.addHandler(consoleHandler)
 
 
     _LOGGER.info('Starting MQTT south plugin...')
