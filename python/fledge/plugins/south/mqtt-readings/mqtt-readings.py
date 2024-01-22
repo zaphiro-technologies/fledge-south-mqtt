@@ -320,6 +320,7 @@ class MqttSubscriberClient(object):
         self.mqtt_client.loop_stop()
 
     async def save(self, msg):
+        _LOGGER.info("TEST WITH ALBE")
         """Store msg content to Fledge """
         payload_json = json.loads(msg.payload.decode('utf-8'))
         _LOGGER.debug("Ingesting %s on topic %s", payload_json, str(msg.topic)) 
