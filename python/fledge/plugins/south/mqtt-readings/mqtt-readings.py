@@ -174,14 +174,6 @@ def plugin_start(handle):
     global loop
     loop = asyncio.new_event_loop()
 
-    
-    logFormatter = logging.Formatter\
-    ("%(name)-12s %(asctime)s %(levelname)-8s %(filename)s:%(funcName)s %(message)s")
-    consoleHandler = logging.StreamHandler(stdout) #set streamhandler to stdout
-    consoleHandler.setFormatter(logFormatter)
-    logger.addHandler(consoleHandler)
-
-
     _LOGGER.info('Starting MQTT south plugin...')
     try:
         _mqtt = handle["_mqtt"]
@@ -320,7 +312,7 @@ class MqttSubscriberClient(object):
         self.mqtt_client.loop_stop()
 
     async def save(self, msg):
-        _LOGGER.info("TEST WITH ALBE")
+        _LOGGER.info("TEST Array read")
         """Store msg content to Fledge """
         payload_json = json.loads(msg.payload.decode('utf-8'))
         _LOGGER.debug("Ingesting %s on topic %s", payload_json, str(msg.topic)) 
