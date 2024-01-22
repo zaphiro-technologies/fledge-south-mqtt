@@ -326,6 +326,7 @@ class MqttSubscriberClient(object):
         data_array = payload_json
 
         for data in data_array:
+            _LOGGER.debug(f"Starting add proces for asset:{data['asset']}")
             if 'readings' in data:
                 _LOGGER.info("data include readings")
                 if self.topic_pattern:
@@ -349,5 +350,7 @@ class MqttSubscriberClient(object):
                     'timestamp': utils.local_timestamp(),
                     'readings': payload_json
                 }
+            _LOGGER.debug(f"Adding data for asset:{data['asset']}")
             _LOGGER.debug(data)  
             async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
+            _LOGGER.debug("Data added")
