@@ -162,6 +162,7 @@ def plugin_init(config):
         handle: JSON object to be used in future calls to the plugin
     Raises:
     """
+
     handle = copy.deepcopy(config)
     handle["_mqtt"] = MqttSubscriberClient(handle)
     return handle
@@ -170,6 +171,17 @@ def plugin_init(config):
 def plugin_start(handle):
     global loop
     loop = asyncio.new_event_loop()
+
+    # Create a stream handler that writes log messages to stdout
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    # Create a formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # Set the formatter for the handler
+    stream_handler.setFormatter(formatter)
+    # Add the stream handler to the logger
+    _LOGGER.addHandler(stream_handler)
+
 
     _LOGGER.info('Starting MQTT south plugin...')
     try:
