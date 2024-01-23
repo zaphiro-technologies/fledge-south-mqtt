@@ -312,22 +312,20 @@ class MqttSubscriberClient(object):
         self.mqtt_client.loop_stop()
 
     async def save(self, msg):
-        _LOGGER.info("TEST Array read")
         """Store msg content to Fledge """
         payload_json = json.loads(msg.payload.decode('utf-8'))
         _LOGGER.debug("Ingesting %s on topic %s", payload_json, str(msg.topic)) 
         data_array = payload_json
 
         for data in data_array:
-            _LOGGER.debug(f"Starting add proces for asset:{data['asset']}")
             if 'readings' in data:
-                _LOGGER.info("data include readings")
+                _LOGGER.debug("data include readings")
                 if self.topic_pattern:
                     # Use the regular expression to extract the value of the '+' placeholder
                     match = self.topic_pattern.match(msg.topic)
                     assetName = "Unknown"
                     if match:
-                        _LOGGER.info("using topic as asset name")
+                        _LOGGER.debug("using topic as asset name")
                         assetName = match.group(1)
                     if 'asset' not in data:
                         data['asset'] = assetName
@@ -337,13 +335,11 @@ class MqttSubscriberClient(object):
                 if 'timestamp' not in data:
                     data['timestamp'] = utils.local_timestamp()
             else:
-                _LOGGER.info("data does not include readings")
+                _LOGGER.debug("data does not include readings")
                 data = {
                     'asset': self.asset,
                     'timestamp': utils.local_timestamp(),
                     'readings': payload_json
                 }
-            _LOGGER.debug(f"Adding data for asset:{data['asset']}")
-            _LOGGER.debug(data)  
             async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
-            _LOGGER.debug("Data added")
+            
